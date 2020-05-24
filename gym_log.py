@@ -1,3 +1,6 @@
+import textwrap
+
+
 def prepare_file():
     global write
     global file
@@ -27,13 +30,11 @@ def workout():
     ex_loads = []
     new_exercise = input()
 
-    log(new_exercise, 'e')
-
     while new_exercise != '':
+        log(new_exercise, 'e')
+
         set_loads = []
         new_set = input()
-
-        log(new_set, 's')
 
         while new_set != '':
             if new_set[-1].isdigit() is False:
@@ -58,12 +59,10 @@ def workout():
         ex_load = sum(set_loads)
         ex_loads.append(ex_load)
 
-        print('—'*7, ex_load)
+        print('—'*7, ex_load, '\n')
         log(ex_load, 'el')
 
         new_exercise = input()
-
-    final_notes = input('Final notes: ')
 
     total_load = sum(ex_loads)
 
@@ -77,7 +76,9 @@ def workout():
     except NameError:
         progress = ''
 
-    print(f'\nTotal load: {total_load}{progress}')
+    print(f'Total load: {total_load}{progress}\n')
+    final_notes = input('Final notes: ')
+
     log(total_load, 'tl', ('', final_notes))
 
 
@@ -125,9 +126,13 @@ def log(value, kind, symbol_note=('', '')):
 
         notes = symbol_note[1]
         if notes != '':
-            notes = '\n    ' + notes
+            if len(notes) > 65:
+                wrap_notes = textwrap.wrap(notes, 65)
+                notes = '\n'.join(line for line in wrap_notes)
+            else:
+                notes = notes.center(65)
 
-        file.write(f'Total load: {value}{progress}'.center(65) + notes + '\n\n\n')
+        file.write(f'Total load: {value}{progress}'.center(65) + ('\n' if notes != '' else '') + notes + '\n\n\n')
 
 
 def main():
