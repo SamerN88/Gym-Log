@@ -1,5 +1,7 @@
 import sys
 
+# TODO: consider removing database fxn and writing simpler code that finds everything from 'logs' (like in get_muscle)
+
 
 def get_workouts():
     global logs
@@ -11,7 +13,7 @@ def get_workouts():
 
 def get_days():
     global wo
-    days_raw = [w[w.find('-')+2:] for w in wo]
+    days_raw = [w[w.index('-')+2:] for w in wo]
     days_clean = []
     for day in days_raw:
         if day not in days_clean:
@@ -22,6 +24,16 @@ def get_days():
 def monthly_count(month):
     months = [day[:3] for day in d]
     return months.count(month)
+
+
+def get_muscle(muscle):
+    muscle = muscle.upper()
+    group = []  # list of workouts for specified muscle
+    for log in logs:
+        mus = log[:log.find(' ')]
+        if mus == muscle:
+            group.append(log)
+    return group
 
 
 def generate_database():
@@ -46,6 +58,7 @@ def main():
     print('[2] Monthly count')
     print('[3] Get month')
     print('[4] Get day')
+    print('[5] Get muscle')
     opt = input('>>> ')
     print()
 
@@ -87,6 +100,15 @@ def main():
             print(*info, sep='\n\n\n')
         except KeyError:
             print('No workout on', date)
+
+    elif opt == '5':
+        muscle = input('Enter muscle: ')
+        group = get_muscle(muscle)
+        if len(group) == 0:
+            print(f'\nNo workouts for "{muscle}"')
+        else:
+            print('\n')
+            print(*group, sep='\n\n\n')
 
 
 filename = 'gym_log.txt'
