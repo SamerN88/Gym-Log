@@ -1,7 +1,7 @@
 import textwrap
 
 
-def prepare_file():
+def prepare_file(filename):
     global write
     global file
     global pl
@@ -136,12 +136,13 @@ def log(value, kind, symbol_note=('', '')):
 
 
 def main():
-    prepare_file()
+    filename = 'gym_log.txt'
+
+    prepare_file(filename)
     workout()
 
     if write:
         file.close()
 
 
-filename = 'gym_log.txt'
 main()
