@@ -1,59 +1,91 @@
 import sys
 
-# TODO: consider removing database fxn and writing simpler code that finds everything from 'logs' (like in get_muscle)
 
-
-def get_workouts():
-    global logs
-    workouts = []
+# Get all distinct dates on which there was a workout or workouts
+def get_dates():
+    dates = []
     for log in logs:
-        workouts.append(log[: log.find('-')+9].rstrip())
-    return workouts[:-1]
+        ref = log.find('-')
+        date = log[ref+2: ref+8].rstrip()
+        if date not in dates:
+            dates.append(date)
+    return dates
 
 
-def get_days():
-    global wo
-    days_raw = [w[w.index('-')+2:] for w in wo]
-    days_clean = []
-    for day in days_raw:
-        if day not in days_clean:
-            days_clean.append(day)
-    return days_clean
-
-
+# Get the number of workout days in a given month
 def monthly_count(month):
-    months = [day[:3] for day in d]
+    dates = get_dates()
+    months = [date[:3] for date in dates]
     return months.count(month)
 
 
+# Get all logs in a given month
+def get_month(month):
+    monthly_logs = []
+    for log in logs:
+        ref = log.find('-')
+        mon = log[ref + 2: ref + 5]
+        if mon == month:
+            monthly_logs.append(log)
+    return monthly_logs
+
+
+# Get all logs on a given day (usually it's 1 log but sometimes there are multiple logs per day)
+def get_day(date):
+    date_logs = []
+    for log in logs:
+        ref = log.find('-')
+        day = log[ref + 2: ref + 8].rstrip()
+        if day == date:
+            date_logs.append(log)
+    return date_logs
+
+
+# Get all logs for a given muscle since start of log
 def get_muscle(muscle):
-    muscle = muscle.upper()
     group = []  # list of workouts for specified muscle
     for log in logs:
-        mus = log[:log.find(' ')]
+        mus = log[: log.find(' ')]
         if mus == muscle:
             group.append(log)
     return group
 
 
-def generate_database():
-    days_dict = {day: [] for day in d}
-    for day in d:
-        for log in logs:
-            if day == log[log.find('-')+2: log.find('-')+9].rstrip():
-                days_dict[day].append(log)
-
-    months = set([day[:3] for day in d])
-    months_dict = {month: {} for month in months}
-    for month in months:
-        for day, log in days_dict.items():
-            if month == day[:3]:
-                months_dict[month][int(day[4:])] = log
-
-    return months_dict
+# AN ALTERNATIVE METHOD FOR EXTRACTING INFORMATION IS GENERATING A DATABASE-LIKE DICTIONARY, BUT IT'S MORE CONVOLUTED:
+# def generate_database():
+#     dates = get_dates()
+#     dates_dict = {date: [] for date in dates}
+#     for date in dates:
+#         for log in logs:
+#             ref = log.find('-')
+#             day = log[ref+2: ref+9].rstrip()
+#             if day == date:
+#                 dates_dict[date].append(log)
+#
+#     months = set([day[:3] for day in dates])
+#     months_dict = {month: {} for month in months}
+#     for month in months:
+#         for date, log in dates_dict.items():
+#             if month == date[:3]:
+#                 months_dict[month][int(date[4:])] = log
+#
+#     return months_dict
 
 
 def main():
+    global logs
+
+    # Get list of logs (global b/c used by many functions)
+    filename = 'gym_log.txt'
+    with open(filename, 'r') as file:
+        text = file.read()
+        logs = text.split('\n\n\n')
+        file.close()
+
+    # Tell user which file is being used
+    print(f'Getting information from file: {filename}\n')
+
+    # Prompt user with info options
     print('[1] Total count')
     print('[2] Monthly count')
     print('[3] Get month')
@@ -62,63 +94,78 @@ def main():
     opt = input('>>> ')
     print()
 
+    # Get total number of workout days since start of log
     if opt == '1':
-        print(len(d), f'workout{"" if len(d) == 1 else "s"} since', d[0])
+        # Get info
+        dates = get_dates()
+        total = len(dates)
 
+        # Display
+        print(total, f'workout{"" if total == 1 else "s"} since', dates[0])
+
+    # Get total number of workout days in a given month
     elif opt == '2':
+        # Prompt user & format entry
         month = str(input('Enter month: '))[:3].title()
+
+        # Get info
         count = monthly_count(month)
+
+        # Display
         print()
         print(count, f'workout{"" if count == 1 else "s"} in', month)
 
+    # Get all logs in a given month
     elif opt == '3':
+        # Prompt user & format entry
         month = str(input('Enter month: '))[:3].title()
-        print()
-        try:
-            info = [log for day in database[month].values() for log in day]
-            print()
-            print(*info, sep='\n\n\n')
-        except KeyError:
-            print('No workout on', month)
 
+        # Get info
+        monthly_logs = get_month(month)
+
+        # Display
+        if len(monthly_logs) == 0:
+            print('\nNo workouts in', month)
+        else:
+            print('\n')
+            print(*monthly_logs, sep='\n\n\n')
+
+    # Get all logs on a given day (usually it's 1 log, but sometimes 2 logs were made for different muscles)
     elif opt == '4':
+        # Prompt user & format entry
         date = str(input('Enter date: ')).title()
-
         try:
             month, day = date.split()
         except ValueError:
             print('\nInvalid date')
             sys.exit()
-
         month = month[:3]
         date = f'{month} {day}'
 
-        print()
-        try:
-            info = database[month][int(day)]
-            print()
-            print(*info, sep='\n\n\n')
-        except KeyError:
-            print('No workout on', date)
+        # Get info
+        date_logs = get_day(date)
 
+        # Display
+        if len(date_logs) == 0:
+            print('\nNo workout on', date)
+        else:
+            print('\n')
+            print(*date_logs, sep='\n\n\n')
+
+    # Get all logs for a given muscle since start of log
     elif opt == '5':
-        muscle = input('Enter muscle: ')
+        # Prompt user & format entry
+        muscle = input('Enter muscle: ').upper()
+
+        # Get info
         group = get_muscle(muscle)
+
+        # Display
         if len(group) == 0:
             print(f'\nNo workouts for "{muscle}"')
         else:
             print('\n')
             print(*group, sep='\n\n\n')
 
-
-filename = 'gym_log.txt'
-with open(filename, 'r') as file:
-    text = file.read()
-    logs = text.split('\n\n\n')
-    file.close()
-
-wo = get_workouts()
-d = get_days()
-database = generate_database()
 
 main()
